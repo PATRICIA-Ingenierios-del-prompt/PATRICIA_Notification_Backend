@@ -1,0 +1,60 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: notification-mongo
+    ports:
+      # Host 27017 (no other PATRICIA stack runs a local Mongo).
+      - "27017:27017"
+    volumes:
+      - notification_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - notification-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: notification-redis
+    ports:
+      # Host 6381 to avoid clashing with Parches (6379) and Location (6380).
+      - "6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - notification-net
+
+  # NOTE: RabbitMQ is intentionally absent — the inbound listeners aren't built yet.
+  # When they are, add a broker service here (or attach to the shared external network
+  # used by the other stacks) and set RABBITMQ_HOST on the app, as in the other services.
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notification-app
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/notification_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8091:8091"
+    networks:
+      - notification-net
+
+networks:
+  notification-net:
+    driver: bridge
+
+volumes:
+  notification_mongo_data:
