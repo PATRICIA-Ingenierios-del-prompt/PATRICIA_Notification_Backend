@@ -29,9 +29,26 @@ services:
     networks:
       - notification-net
 
-  # NOTE: RabbitMQ is intentionally absent — the inbound listeners aren't built yet.
-  # When they are, add a broker service here (or attach to the shared external network
-  # used by the other stacks) and set RABBITMQ_HOST on the app, as in the other services.
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: notification-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      # Host ports shifted (+3) to avoid clashing with Parches (5672/15672),
+      # Events (5673/15673) and Location (5674/15674). This is an *isolated* broker —
+      # no messages cross to the other stacks. For real cross-MS integration, attach
+      # all apps to a shared external network and point them at a single RabbitMQ.
+      - "5675:5672"      # AMQP
+      - "15675:15672"    # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - notification-net
 
   app:
     build:
@@ -43,10 +60,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       MONGODB_URI: mongodb://mongo:27017/notification_db
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
     ports:
       - "8091:8091"
     networks:
