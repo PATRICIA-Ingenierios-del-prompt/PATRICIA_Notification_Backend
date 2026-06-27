@@ -1,6 +1,5 @@
 name: CI
 
-# Runs on every push to develop/main and on every PR targeting develop/main.
 on:
   push:
     branches: [develop, main]
