@@ -5,6 +5,7 @@ import ingprompt.patricia.notification.application.port.in.NotificationQueryCase
 import ingprompt.patricia.notification.application.port.in.ReceiveNotificationCase;
 import ingprompt.patricia.notification.application.port.out.GlobalNotificationRepositoryOutPort;
 import ingprompt.patricia.notification.application.port.out.GlobalReadMarkerRepositoryOutPort;
+import ingprompt.patricia.notification.application.port.out.NotificationPushPort;
 import ingprompt.patricia.notification.application.port.out.UnreadCounterOutPort;
 import ingprompt.patricia.notification.application.port.out.UserNotificationRepositoryOutPort;
 import ingprompt.patricia.notification.domain.enums.NotificationState;
@@ -33,14 +34,16 @@ public class NotificationService implements ReceiveNotificationCase, Notificatio
     private final GlobalNotificationRepositoryOutPort globalRepository;
     private final GlobalReadMarkerRepositoryOutPort readMarkerRepository;
     private final UnreadCounterOutPort unreadCounter;
+    private final NotificationPushPort notificationPush;
     private final Duration retention;
     private final int defaultLimit;
 
-    public NotificationService(UserNotificationRepositoryOutPort userRepository, GlobalNotificationRepositoryOutPort globalRepository, GlobalReadMarkerRepositoryOutPort readMarkerRepository, UnreadCounterOutPort unreadCounter, @Value("${notification.retention-days}") long retentionDays, @Value("${notification.feed.default-limit}") int defaultLimit) {
+    public NotificationService(UserNotificationRepositoryOutPort userRepository, GlobalNotificationRepositoryOutPort globalRepository, GlobalReadMarkerRepositoryOutPort readMarkerRepository, UnreadCounterOutPort unreadCounter, NotificationPushPort notificationPush, @Value("${notification.retention-days}") long retentionDays, @Value("${notification.feed.default-limit}") int defaultLimit) {
         this.userRepository = userRepository;
         this.globalRepository = globalRepository;
         this.readMarkerRepository = readMarkerRepository;
         this.unreadCounter = unreadCounter;
+        this.notificationPush = notificationPush;
         this.retention = Duration.ofDays(retentionDays);
         this.defaultLimit = defaultLimit;
     }
@@ -52,8 +55,11 @@ public class NotificationService implements ReceiveNotificationCase, Notificatio
             log.debug("Skipping duplicate notification for recipient {} (source {})", recipientId, sourceEventId);
             return;
         }
-        userRepository.save(UserNotification.create(recipientId, type, message, payload, sourceEventId, retention));
+        UserNotification notification = UserNotification.create(recipientId, type, message, payload, sourceEventId, retention);
+        userRepository.save(notification);
         unreadCounter.incrementIfPresent(recipientId);
+        // Real-time fan-out to the user's bell (fire-and-forget; never rolls back the write).
+        notificationPush.pushToUser(recipientId, NotificationView.ofTargeted(notification));
     }
 
     @Override
@@ -72,7 +78,10 @@ public class NotificationService implements ReceiveNotificationCase, Notificatio
             log.debug("Skipping duplicate broadcast (source {})", sourceEventId);
             return;
         }
-        globalRepository.save(GlobalNotification.create(type, message, payload, sourceEventId, retention));
+        GlobalNotification notification = GlobalNotification.create(type, message, payload, sourceEventId, retention);
+        globalRepository.save(notification);
+        // Broadcast to every connected client; a fresh global is unread for everyone.
+        notificationPush.pushToAll(NotificationView.ofGlobal(notification, NotificationState.UNREAD));
     }
 
     // ---- NotificationQueryCase ----
