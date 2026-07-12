@@ -1,0 +1,21 @@
+# Name `notification` — el Gateway ya reenvia /api/notifications/* y
+# /ws/notifications/* (ambos ya estan en el ordered_cache_behavior de
+# CloudFront en modules/frontend/main.tf) hacia, presumiblemente,
+# http://notification.patricia-app.svc.cluster.local:8091. Confirmar el
+# host/puerto exacto contra RouteConfig.java de Gateway antes de asumirlo.
+# ingress-ws.yaml (Ulink_Infra/k8s) ya tiene session affinity por cookie
+# sobre el path /ws -- eso mantiene a un mismo cliente pegado a la misma
+# replica mientras dure la conexion, pero el fan-out entre replicas para
+# push originados en otra replica sigue dependiendo del backplane de Redis.
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification
+  namespace: patricia-app
+  labels: { app: notification }
+spec:
+  type: ClusterIP
+  selector: { app: notification }
+  ports:
+    - port: 8091
+      targetPort: 8091
