@@ -79,7 +79,7 @@ class StompConfigTest {
     }
 
     @Test
-    void beforeHandshake_headerMissing_fallsBackToQueryParam() {
+    void beforeHandshake_headerMissing_fallsBackToQueryParam() throws Exception {
         Captured captured = registerAndCapture();
         UUID userId = UUID.randomUUID();
         ServletServerHttpRequest request = requestWithHeader(null, userId.toString());
@@ -93,7 +93,7 @@ class StompConfigTest {
     }
 
     @Test
-    void beforeHandshake_noIdentityAnywhere_rejectsHandshake() {
+    void beforeHandshake_noIdentityAnywhere_rejectsHandshake() throws Exception {
         Captured captured = registerAndCapture();
         ServletServerHttpRequest request = requestWithHeader(null, null);
         Map<String, Object> attrs = new HashMap<>();
@@ -106,7 +106,7 @@ class StompConfigTest {
     }
 
     @Test
-    void beforeHandshake_invalidUuid_rejectsHandshake() {
+    void beforeHandshake_invalidUuid_rejectsHandshake() throws Exception {
         Captured captured = registerAndCapture();
         ServletServerHttpRequest request = requestWithHeader("not-a-uuid", null);
         Map<String, Object> attrs = new HashMap<>();
@@ -118,7 +118,7 @@ class StompConfigTest {
     }
 
     @Test
-    void beforeHandshake_nonServletRequest_allowsWithoutStoringUser() {
+    void beforeHandshake_nonServletRequest_allowsWithoutStoringUser() throws Exception {
         Captured captured = registerAndCapture();
         ServerHttpRequest request = mock(ServerHttpRequest.class); // not a ServletServerHttpRequest
         Map<String, Object> attrs = new HashMap<>();
