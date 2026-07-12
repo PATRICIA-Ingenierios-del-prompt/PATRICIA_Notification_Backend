@@ -1,0 +1,104 @@
+package ingprompt.patricia.notification.infrastructure.messaging.listener;
+
+import ingprompt.patricia.notification.application.port.in.ReceiveNotificationCase;
+import ingprompt.patricia.notification.domain.enums.NotificationType;
+import ingprompt.patricia.notification.infrastructure.messaging.event.EventCreatedEvent;
+import ingprompt.patricia.notification.infrastructure.messaging.event.EventLinkedToParcheEvent;
+import ingprompt.patricia.notification.infrastructure.messaging.event.MatchRequestedEvent;
+import ingprompt.patricia.notification.infrastructure.messaging.event.MessageCreatedEvent;
+import ingprompt.patricia.notification.infrastructure.messaging.event.ParcheCreatedEvent;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Set;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+
+@ExtendWith(MockitoExtension.class)
+class NotificationListenersTest {
+
+    @Mock
+    private ReceiveNotificationCase receiveNotification;
+
+    // ---- ParcheEventsListener (#1) ----
+
+    @Test
+    void parcheCreated_public_broadcasts() {
+        ParcheEventsListener listener = new ParcheEventsListener(receiveNotification);
+        UUID parcheId = UUID.randomUUID();
+
+        listener.onParcheCreated(new ParcheCreatedEvent("evt", parcheId, "Salsa", "PUBLIC", UUID.randomUUID()));
+
+        verify(receiveNotification).notifyEveryone(eq(NotificationType.NEW_PUBLIC_PARCHE), any(), any(), eq("evt"));
+    }
+
+    @Test
+    void parcheCreated_private_isIgnored() {
+        ParcheEventsListener listener = new ParcheEventsListener(receiveNotification);
+
+        listener.onParcheCreated(new ParcheCreatedEvent("evt", UUID.randomUUID(), "Secret", "PRIVATE", UUID.randomUUID()));
+
+        verifyNoInteractions(receiveNotification);
+    }
+
+    // ---- EventEventsListener (#2, #3) ----
+
+    @Test
+    void eventCreated_standalone_broadcasts() {
+        EventEventsListener listener = new EventEventsListener(receiveNotification);
+
+        listener.onEventCreated(new EventCreatedEvent("evt", UUID.randomUUID(), "Hike", UUID.randomUUID(), false));
+
+        verify(receiveNotification).notifyEveryone(eq(NotificationType.NEW_EVENT_FOR_PUBLIC), any(), any(), eq("evt"));
+    }
+
+    @Test
+    void eventCreated_linkedToParche_isIgnored() {
+        EventEventsListener listener = new EventEventsListener(receiveNotification);
+
+        listener.onEventCreated(new EventCreatedEvent("evt", UUID.randomUUID(), "Hike", UUID.randomUUID(), true));
+
+        verify(receiveNotification, never()).notifyEveryone(any(), any(), any(), any());
+    }
+
+    @Test
+    void eventLinkedToParche_notifiesMembers() {
+        EventEventsListener listener = new EventEventsListener(receiveNotification);
+        Set<UUID> members = Set.of(UUID.randomUUID(), UUID.randomUUID());
+
+        listener.onEventLinkedToParche(new EventLinkedToParcheEvent(
+                "evt", UUID.randomUUID(), "Hike", UUID.randomUUID(), "Mountain Crew", members));
+
+        verify(receiveNotification).notifyUsers(eq(members), eq(NotificationType.NEW_EVENT_IN_PARCHE), any(), any(), eq("evt"));
+    }
+
+    // ---- MatchingEventsListener (#5) ----
+
+    @Test
+    void matchRequested_notifiesTargetUser() {
+        MatchingEventsListener listener = new MatchingEventsListener(receiveNotification);
+        UUID target = UUID.randomUUID();
+
+        listener.onMatchRequested(new MatchRequestedEvent("evt", UUID.randomUUID(), "Ana", target));
+
+        verify(receiveNotification).notifyUser(eq(target), eq(NotificationType.NEW_MATCH_REQUEST), any(), any(), eq("evt"));
+    }
+
+    // ---- MessageEventsListener (#4 — deferred stub) ----
+
+    @Test
+    void messageCreated_isConsumedWithoutError() {
+        MessageEventsListener listener = new MessageEventsListener();
+
+        listener.onMessageCreated(new MessageCreatedEvent(
+                "evt", UUID.randomUUID(), UUID.randomUUID(), "Crew", UUID.randomUUID(), Set.of(UUID.randomUUID())));
+        // No-op by design (offline push deferred); the test just guards it stays exception-free.
+    }
+}
