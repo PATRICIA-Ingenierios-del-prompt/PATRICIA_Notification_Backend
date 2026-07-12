@@ -7,6 +7,7 @@ import ingprompt.patricia.notification.domain.enums.NotificationType;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -78,5 +79,30 @@ class NotificationDomainTest {
         assertThat(t.getToken()).isEqualTo("ExponentPushToken[x]");
         assertThat(t.getPlatform()).isEqualTo(DevicePlatform.IOS);
         assertThat(t.getRegisteredAt()).isNotNull();
+    }
+
+    @Test
+    void deviceToken_rehydrate_restoresExactFields() {
+        UUID userId = UUID.randomUUID();
+        Instant registeredAt = Instant.now().minusSeconds(3600);
+
+        DeviceToken t = DeviceToken.rehydrate(userId, "ExponentPushToken[y]", DevicePlatform.ANDROID, registeredAt);
+
+        assertThat(t.getUserId()).isEqualTo(userId);
+        assertThat(t.getToken()).isEqualTo("ExponentPushToken[y]");
+        assertThat(t.getPlatform()).isEqualTo(DevicePlatform.ANDROID);
+        assertThat(t.getRegisteredAt()).isEqualTo(registeredAt);
+    }
+
+    @Test
+    void notificationType_render_formatsAllTemplates() {
+        assertThat(NotificationType.NEW_EVENT_FOR_PUBLIC.render("Beach Cleanup"))
+                .isEqualTo("A new event 'Beach Cleanup' has been created for the community");
+        assertThat(NotificationType.NEW_EVENT_IN_PARCHE.render("Mountain Crew"))
+                .isEqualTo("A new event has been created in Mountain Crew");
+        assertThat(NotificationType.NEW_MESSAGE_ON_PARCHE.render("Mountain Crew"))
+                .isEqualTo("You have a new message on Mountain Crew");
+        assertThat(NotificationType.NEW_MATCH_REQUEST.render("Ana"))
+                .isEqualTo("The user Ana wants to connect with you");
     }
 }
