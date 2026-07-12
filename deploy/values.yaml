@@ -1,0 +1,81 @@
+# Defaults for the Notification MS chart. The CD job overrides
+# image.repository and image.tag per deploy (pinned to the commit SHA);
+# everything else is edited here and versioned with the code it configures.
+
+image:
+  repository: ""            # set by CD: <account>.dkr.ecr.<region>.amazonaws.com/patricia-dev/notification
+  tag: ""                   # set by CD: short commit SHA
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+serviceAccount:
+  roleArn: "" # Sin llamadas a AWS SDK (Mongo Atlas/Redis/RabbitMQ/Expo son todos endpoints externos con su propia auth) -> no necesita IRSA.
+
+# CRITICO: "socket", NO "standard". Notification es uno de los 5 servicios
+# "socket" (Location, Notification, Communication, Parques, Board) que
+# necesitan alcanzar el backplane de Redis (Cluster #2) ademas de todo lo
+# que ya alcanza un servicio "standard" (RDS/cache-Redis/Amazon MQ). El
+# SecurityGroupPolicy de este tier (Ulink_Infra/security-group-policy.tf,
+# recurso patricia_app_socket_pods_sg_policy) ya existe y adjunta TANTO
+# eks_pods_sg_id COMO socket_ms_pods_sg_id -- pero solo a los pods que
+# lleven la label patricia.io/sg-tier: socket. Un pod con "standard" en vez
+# de "socket" arranca bien pero se queda colgado (timeout) apenas intenta
+# hablar con el backplane, porque ese trafico esta bloqueado a nivel de SG
+# para cualquier pod que no sea miembro de socket_ms_pods_sg. Nunca poner
+# ambas labels en el mismo pod (comportamiento indefinido segun AWS).
+sgTier: socket
+
+config:
+  expoPushEnabled: "true"
+  expoPushUrl: "https://exp.host/--/api/v2/push/send"
+  notificationRetentionDays: "90"
+  notificationFeedLimit: "30"
+  # ElastiCache Cluster #1 y #2 tienen transit_encryption_enabled=true en
+  # Terraform (ver modules/elasticache-cache y modules/elasticache-backplane) -
+  # ambas conexiones necesitan TLS.
+  redisSslEnabled: "true"
+  backplaneRedisSslEnabled: "true"
+  backplaneRedisChannel: "notifications:broadcast"
+
+# External Secrets Operator: remote keys in AWS Secrets Manager
+# (created by Ulink_Infra module.secrets; prefix = ${project_name}-${environment}).
+externalSecrets:
+  clusterSecretStore: patricia-aws-secrets-manager
+  prefix: "patricia-dev"
+  # NOTE sobre lo que deberia existir ya en AWS Secrets Manager (confirmar
+  # con `aws secretsmanager list-secrets` antes de aplicar):
+  #   patricia-dev/amazon-mq         -> EXISTE (compartido). Keys nativas
+  #                                     SPRING_RABBITMQ_ADDRESSES/USERNAME/PASSWORD.
+  #   patricia-dev/cache-redis       -> EXISTE (compartido con Auth/Parche
+  #                                     Core/Location/Matching). Keys
+  #                                     REDIS_HOST/REDIS_PORT/REDIS_PASSWORD.
+  #   patricia-dev/backplane-redis   -> Debe existir (Set-TerraformSecrets.ps1
+  #                                     no lo lee porque no tiene forma
+  #                                     Neon/Mongo, pero module.secrets SI lo
+  #                                     crea siempre que module.elasticache_backplane
+  #                                     haya corrido). Confirmar con
+  #                                     `aws secretsmanager list-secrets | grep backplane`.
+  #                                     Keys ya nativas BACKPLANE_REDIS_HOST/
+  #                                     PORT/PASSWORD -- calzan 1:1 con lo que
+  #                                     application.properties ya espera, sin
+  #                                     remapear nada.
+  #   patricia-dev/notification/mongodb -> Debe existir (Set-TerraformSecrets.ps1
+  #                                     ya lo lee junto con board/parques). Key
+  #                                     nativa SPRING_DATA_MONGODB_URI, mapeada
+  #                                     abajo al nombre custom MONGODB_URI que
+  #                                     el codigo espera.
+  #   EXPO_PUSH_ACCESS_TOKEN         -> opcional (Expo "enhanced security").
+  #                                     Si no se usa, se deja vacio en el
+  #                                     ConfigMap; si se necesita, crear
+  #                                     patricia-dev/expo-access-token y
+  #                                     agregarlo a externalsecret.yaml.
+
+resources:
+  requests: { cpu: 500m, memory: 768Mi }
+  limits:   { cpu: "1",  memory: 1Gi }
+
+hpa:
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70

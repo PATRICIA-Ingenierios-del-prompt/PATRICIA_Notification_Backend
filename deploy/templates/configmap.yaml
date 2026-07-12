@@ -1,0 +1,19 @@
+# Non-secret configuration. Mongo, Redis (cache y backplane) y RabbitMQ
+# vienen del Secret notification-secrets sincronizado por el ExternalSecret
+# (ver externalsecret.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-config
+  namespace: patricia-app
+data:
+  EXPO_PUSH_ENABLED: {{ .Values.config.expoPushEnabled | quote }}
+  EXPO_PUSH_URL: {{ .Values.config.expoPushUrl | quote }}
+  NOTIFICATION_RETENTION_DAYS: {{ .Values.config.notificationRetentionDays | quote }}
+  NOTIFICATION_FEED_LIMIT: {{ .Values.config.notificationFeedLimit | quote }}
+  REDIS_SSL_ENABLED: {{ .Values.config.redisSslEnabled | quote }}
+  BACKPLANE_REDIS_SSL_ENABLED: {{ .Values.config.backplaneRedisSslEnabled | quote }}
+  BACKPLANE_REDIS_CHANNEL: {{ .Values.config.backplaneRedisChannel | quote }}
+  # Opcional (Expo "enhanced security") -- vacio hasta que se cree el secret
+  # real; ver nota en values.yaml.
+  EXPO_PUSH_ACCESS_TOKEN: ""

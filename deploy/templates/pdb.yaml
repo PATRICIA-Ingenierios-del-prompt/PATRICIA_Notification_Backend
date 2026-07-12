@@ -1,0 +1,14 @@
+# Notification, igual que Gateway, mantiene conexiones WebSocket de larga
+# duracion (STOMP sobre /ws/notifications) -- un drenado de nodo/rollout que
+# tumbe TODAS las replicas a la vez desconectaria a todos los clientes de
+# golpe. minAvailable: 1 asegura que un rollout o un node-drain nunca baje
+# de 1 replica sana mientras dure la operacion.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: notification
+  namespace: patricia-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: notification }

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+  namespace: patricia-app
+  labels: { app: notification }
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  selector:
+    matchLabels: { app: notification }
+  template:
+    metadata:
+      # patricia.io/sg-tier: socket (NO "standard") -- ver la nota extensa en
+      # values.yaml. Sin esto el pod no tiene ruta de red hacia el backplane
+      # de Redis (Cluster #2), sin importar que las credenciales y el codigo
+      # esten bien.
+      labels: { app: notification, patricia.io/sg-tier: "{{ .Values.sgTier }}" }
+    spec:
+      serviceAccountName: notification
+      containers:
+        - name: notification
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8091
+          envFrom:
+            - configMapRef: { name: notification-config }
+            - secretRef:    { name: notification-secrets }
+
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8091 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8091 }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8091 }
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
