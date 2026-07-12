@@ -142,13 +142,6 @@
 						<configuration>
 							<excludes>
 								<exclude>**/NotificationApplication.class</exclude>
-								<exclude>**/infrastructure/persistence/**</exclude>
-								<exclude>**/infrastructure/redis/**</exclude>
-								<exclude>**/infrastructure/push/**</exclude>
-								<exclude>**/infrastructure/ws/**</exclude>
-								<exclude>**/infrastructure/web/**</exclude>
-								<exclude>**/infrastructure/messaging/config/**</exclude>
-								<exclude>**/infrastructure/messaging/event/**</exclude>
 							</excludes>
 						</configuration>
 						<executions>
