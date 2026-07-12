@@ -108,6 +108,12 @@ class NotificationServiceTest {
         verifyNoInteractions(userRepository, webPush, mobilePush);
     }
 
+    @Test
+    void notifyUsers_emptySet_isNoOp() {
+        service.notifyUsers(Set.of(), NotificationType.NEW_EVENT_IN_PARCHE, "msg", Map.of(), "evt-2");
+        verifyNoInteractions(userRepository, webPush, mobilePush);
+    }
+
     // ---- notifyEveryone ----
 
     @Test
@@ -167,6 +173,29 @@ class NotificationServiceTest {
 
         assertThat(feed).hasSize(1);
         assertThat(feed.get(0).state()).isEqualTo(NotificationState.READ);
+    }
+
+    @Test
+    void getFeed_truncatesToRequestedLimit_whenCombinedExceedsIt() {
+        Instant now = Instant.now();
+        UserNotification t1 = UserNotification.rehydrate(UUID.randomUUID(), userId,
+                NotificationType.NEW_MATCH_REQUEST, "t1", Map.of(), NotificationState.UNREAD,
+                now, "s1", now.plusSeconds(3600));
+        UserNotification t2 = UserNotification.rehydrate(UUID.randomUUID(), userId,
+                NotificationType.NEW_MATCH_REQUEST, "t2", Map.of(), NotificationState.UNREAD,
+                now.minusSeconds(10), "s2", now.plusSeconds(3600));
+        GlobalNotification g = GlobalNotification.rehydrate(UUID.randomUUID(),
+                NotificationType.NEW_PUBLIC_PARCHE, "g", Map.of(), now.minusSeconds(20), "s3", now.plusSeconds(3600));
+
+        when(readMarkerRepository.findLastReadAt(userId)).thenReturn(Optional.empty());
+        when(userRepository.findRecentByRecipient(userId, 2)).thenReturn(List.of(t1, t2));
+        when(globalRepository.findRecent(2)).thenReturn(List.of(g));
+
+        List<NotificationView> feed = service.getFeed(userId, 2); // explicit limit smaller than combined total (3)
+
+        assertThat(feed).hasSize(2);
+        assertThat(feed.get(0).message()).isEqualTo("t1"); // newest first, truncated to the limit
+        assertThat(feed.get(1).message()).isEqualTo("t2");
     }
 
     // ---- getUnreadCount ----
