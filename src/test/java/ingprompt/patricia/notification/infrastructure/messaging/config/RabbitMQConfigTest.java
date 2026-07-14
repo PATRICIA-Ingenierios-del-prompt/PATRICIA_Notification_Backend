@@ -23,6 +23,7 @@ class RabbitMQConfigTest {
         assertExchange(config.eventExchange(), RabbitMQConfig.EVENT_EXCHANGE);
         assertExchange(config.communicationExchange(), RabbitMQConfig.COMMUNICATION_EXCHANGE);
         assertExchange(config.matchingExchange(), RabbitMQConfig.MATCHING_EXCHANGE);
+        assertExchange(config.logrosExchange(), RabbitMQConfig.LOGROS_EXCHANGE);
         assertExchange(config.notificationsDeadLetterExchange(), RabbitMQConfig.DLX_EXCHANGE);
     }
 
@@ -49,6 +50,7 @@ class RabbitMQConfigTest {
         assertThat(config.eventLinkedQueue().getArguments()).containsKey("x-dead-letter-exchange");
         assertThat(config.messageCreatedQueue().getArguments()).containsKey("x-dead-letter-exchange");
         assertThat(config.matchRequestedQueue().getArguments()).containsKey("x-dead-letter-exchange");
+        assertThat(config.logroDesbloqueadoQueue().getArguments()).containsKey("x-dead-letter-exchange");
     }
 
     @Test
@@ -58,6 +60,7 @@ class RabbitMQConfigTest {
         assertThat(config.eventLinkedDlq().getName()).isEqualTo(RabbitMQConfig.EVENT_LINKED_QUEUE + ".dlq");
         assertThat(config.messageCreatedDlq().getName()).isEqualTo(RabbitMQConfig.MESSAGE_CREATED_QUEUE + ".dlq");
         assertThat(config.matchRequestedDlq().getName()).isEqualTo(RabbitMQConfig.MATCH_REQUESTED_QUEUE + ".dlq");
+        assertThat(config.logroDesbloqueadoDlq().getName()).isEqualTo(RabbitMQConfig.LOGRO_DESBLOQUEADO_QUEUE + ".dlq");
     }
 
     @Test
@@ -75,6 +78,16 @@ class RabbitMQConfigTest {
         assertThat(config.eventLinkedBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.EVENT_LINKED_ROUTING_KEY);
         assertThat(config.messageCreatedBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.MESSAGE_CREATED_ROUTING_KEY);
         assertThat(config.matchRequestedBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.MATCH_REQUESTED_ROUTING_KEY);
+        assertThat(config.logroDesbloqueadoBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.LOGRO_DESBLOQUEADO_ROUTING_KEY);
+    }
+
+    @Test
+    void logroDesbloqueadoBinding_bindsQueueToLogrosExchange() {
+        Binding binding = config.logroDesbloqueadoBinding();
+
+        assertThat(binding.getExchange()).isEqualTo(RabbitMQConfig.LOGROS_EXCHANGE);
+        assertThat(binding.getDestination()).isEqualTo(RabbitMQConfig.LOGRO_DESBLOQUEADO_QUEUE);
+        assertThat(binding.getRoutingKey()).isEqualTo(RabbitMQConfig.LOGRO_DESBLOQUEADO_ROUTING_KEY);
     }
 
     @Test
@@ -92,6 +105,7 @@ class RabbitMQConfigTest {
         assertThat(config.eventLinkedDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
         assertThat(config.messageCreatedDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
         assertThat(config.matchRequestedDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
+        assertThat(config.logroDesbloqueadoDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
     }
 
     @Test
