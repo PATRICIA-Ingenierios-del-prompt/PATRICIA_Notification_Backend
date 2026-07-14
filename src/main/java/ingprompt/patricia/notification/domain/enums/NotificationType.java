@@ -9,7 +9,8 @@ public enum NotificationType {
 
     NEW_EVENT_IN_PARCHE("A new event has been created in %s"),
     NEW_MESSAGE_ON_PARCHE("You have a new message on %s"),
-    NEW_MATCH_REQUEST("The user %s wants to connect with you");
+    NEW_MATCH_REQUEST("The user %s wants to connect with you"),
+    ALBUM_MONA_UNLOCKED("You unlocked the '%s' album sticker!");
 
     private final String template;
 

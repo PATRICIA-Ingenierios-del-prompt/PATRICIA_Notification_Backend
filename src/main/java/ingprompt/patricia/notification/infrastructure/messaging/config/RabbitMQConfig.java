@@ -24,6 +24,7 @@ public class RabbitMQConfig {
     public static final String EVENT_EXCHANGE = "event.events";            // Events MS
     public static final String COMMUNICATION_EXCHANGE = "communication.events"; // Communication MS
     public static final String MATCHING_EXCHANGE = "matching.events";      // Matching MS
+    public static final String LOGROS_EXCHANGE = "patricia.logros";        // User Backend (album achievements)
 
     // ---------- Routing keys we listen to ----------
     public static final String PARCHE_CREATED_ROUTING_KEY = "parche.created";              // #1
@@ -31,6 +32,7 @@ public class RabbitMQConfig {
     public static final String EVENT_LINKED_ROUTING_KEY = "event.linked.to.parche";        // #3
     public static final String MESSAGE_CREATED_ROUTING_KEY = "parche.message.created";      // #4
     public static final String MATCH_REQUESTED_ROUTING_KEY = "match.requested";            // #5
+    public static final String LOGRO_DESBLOQUEADO_ROUTING_KEY = "logro.desbloqueado";      // #6
 
     // ---------- Our queues ----------
     public static final String PARCHE_CREATED_QUEUE = "notifications.parche.created.queue";
@@ -38,6 +40,7 @@ public class RabbitMQConfig {
     public static final String EVENT_LINKED_QUEUE = "notifications.event.linked.queue";
     public static final String MESSAGE_CREATED_QUEUE = "notifications.message.created.queue";
     public static final String MATCH_REQUESTED_QUEUE = "notifications.match.requested.queue";
+    public static final String LOGRO_DESBLOQUEADO_QUEUE = "notifications.logro.desbloqueado.queue";
 
     // ---------- Dead-letter infrastructure ----------
     public static final String DLX_EXCHANGE = "notifications.dlx";
@@ -63,6 +66,11 @@ public class RabbitMQConfig {
     @Bean
     public TopicExchange matchingExchange() {
         return new TopicExchange(MATCHING_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public TopicExchange logrosExchange() {
+        return new TopicExchange(LOGROS_EXCHANGE, true, false);
     }
 
     @Bean
@@ -97,6 +105,11 @@ public class RabbitMQConfig {
         return dlqEnabled(MATCH_REQUESTED_QUEUE);
     }
 
+    @Bean
+    public Queue logroDesbloqueadoQueue() {
+        return dlqEnabled(LOGRO_DESBLOQUEADO_QUEUE);
+    }
+
     // ---- Per-queue DLQs (parked poison messages live here for inspection) ----
 
     @Bean
@@ -122,6 +135,11 @@ public class RabbitMQConfig {
     @Bean
     public Queue matchRequestedDlq() {
         return QueueBuilder.durable(MATCH_REQUESTED_QUEUE + DLQ_SUFFIX).build();
+    }
+
+    @Bean
+    public Queue logroDesbloqueadoDlq() {
+        return QueueBuilder.durable(LOGRO_DESBLOQUEADO_QUEUE + DLQ_SUFFIX).build();
     }
 
     // ---- Bindings: live queues to their owning exchange ----
@@ -151,6 +169,11 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(matchRequestedQueue()).to(matchingExchange()).with(MATCH_REQUESTED_ROUTING_KEY);
     }
 
+    @Bean
+    public Binding logroDesbloqueadoBinding() {
+        return BindingBuilder.bind(logroDesbloqueadoQueue()).to(logrosExchange()).with(LOGRO_DESBLOQUEADO_ROUTING_KEY);
+    }
+
     // ---- Bindings: DLQs to the DLX ----
 
     @Bean
@@ -176,6 +199,11 @@ public class RabbitMQConfig {
     @Bean
     public Binding matchRequestedDlqBinding() {
         return dlqBinding(MATCH_REQUESTED_QUEUE, matchRequestedDlq());
+    }
+
+    @Bean
+    public Binding logroDesbloqueadoDlqBinding() {
+        return dlqBinding(LOGRO_DESBLOQUEADO_QUEUE, logroDesbloqueadoDlq());
     }
 
     // ---- Message conversion + listener container ----
