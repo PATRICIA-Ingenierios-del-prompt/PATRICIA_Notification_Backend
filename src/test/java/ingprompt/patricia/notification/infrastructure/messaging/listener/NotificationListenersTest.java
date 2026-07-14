@@ -4,6 +4,8 @@ import ingprompt.patricia.notification.application.port.in.ReceiveNotificationCa
 import ingprompt.patricia.notification.domain.enums.NotificationType;
 import ingprompt.patricia.notification.infrastructure.messaging.event.EventCreatedEvent;
 import ingprompt.patricia.notification.infrastructure.messaging.event.EventLinkedToParcheEvent;
+import ingprompt.patricia.notification.infrastructure.messaging.event.EventoEnvelope;
+import ingprompt.patricia.notification.infrastructure.messaging.event.LogroDesbloqueadoPayload;
 import ingprompt.patricia.notification.infrastructure.messaging.event.MatchRequestedEvent;
 import ingprompt.patricia.notification.infrastructure.messaging.event.MessageCreatedEvent;
 import ingprompt.patricia.notification.infrastructure.messaging.event.ParcheCreatedEvent;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
@@ -89,6 +92,21 @@ class NotificationListenersTest {
         listener.onMatchRequested(new MatchRequestedEvent("evt", UUID.randomUUID(), "Ana", target));
 
         verify(receiveNotification).notifyUser(eq(target), eq(NotificationType.NEW_MATCH_REQUEST), any(), any(), eq("evt"));
+    }
+
+    // ---- LogroEventsListener (#6) ----
+
+    @Test
+    void logroDesbloqueado_notifiesUser() {
+        LogroEventsListener listener = new LogroEventsListener(receiveNotification);
+        UUID userId = UUID.randomUUID();
+        LogroDesbloqueadoPayload payload = new LogroDesbloqueadoPayload("MONA_CODER", "Mona Coder", 50, 150);
+        EventoEnvelope<LogroDesbloqueadoPayload> envelope =
+                new EventoEnvelope<>("evt", Instant.now(), userId, "logro.desbloqueado", payload);
+
+        listener.onLogroDesbloqueado(envelope);
+
+        verify(receiveNotification).notifyUser(eq(userId), eq(NotificationType.ALBUM_MONA_UNLOCKED), any(), any(), eq("evt"));
     }
 
     // ---- MessageEventsListener (#4 — deferred stub) ----
