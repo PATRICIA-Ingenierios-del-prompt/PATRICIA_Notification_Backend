@@ -38,7 +38,7 @@ class NotificationControllerTest {
         controller = new NotificationController(queryCase, markReadCase);
         UUID userId = UUID.randomUUID();
         NotificationView view = new NotificationView(UUID.randomUUID(), NotificationScope.TARGETED,
-                NotificationType.NEW_MATCH_REQUEST, "hi", Map.of(), NotificationState.UNREAD, Instant.now());
+                NotificationType.NEW_MATCH_CONFIRMED, "hi", Map.of(), NotificationState.UNREAD, Instant.now());
         when(queryCase.getFeed(userId, 5)).thenReturn(List.of(view));
 
         ResponseEntity<List<NotificationResponse>> response = controller.feed(userId, 5);

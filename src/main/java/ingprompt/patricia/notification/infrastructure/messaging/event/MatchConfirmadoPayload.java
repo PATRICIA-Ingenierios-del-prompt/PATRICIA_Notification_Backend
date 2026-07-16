@@ -9,9 +9,8 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MatchRequestedEvent {
-    private String sourceEventId;
-    private UUID requesterId;
-    private String requesterName;
-    private UUID targetUserId;
+public class MatchConfirmadoPayload {
+    private UUID matchId;
+    private UUID otroUsuarioId;
+    private double scoreTotal;
 }

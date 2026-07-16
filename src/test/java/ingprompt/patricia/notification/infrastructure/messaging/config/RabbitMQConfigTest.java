@@ -49,7 +49,7 @@ class RabbitMQConfigTest {
         assertThat(config.eventCreatedQueue().getArguments()).containsKey("x-dead-letter-exchange");
         assertThat(config.eventLinkedQueue().getArguments()).containsKey("x-dead-letter-exchange");
         assertThat(config.messageCreatedQueue().getArguments()).containsKey("x-dead-letter-exchange");
-        assertThat(config.matchRequestedQueue().getArguments()).containsKey("x-dead-letter-exchange");
+        assertThat(config.matchConfirmedQueue().getArguments()).containsKey("x-dead-letter-exchange");
         assertThat(config.logroDesbloqueadoQueue().getArguments()).containsKey("x-dead-letter-exchange");
     }
 
@@ -59,7 +59,7 @@ class RabbitMQConfigTest {
         assertThat(config.eventCreatedDlq().getName()).isEqualTo(RabbitMQConfig.EVENT_CREATED_QUEUE + ".dlq");
         assertThat(config.eventLinkedDlq().getName()).isEqualTo(RabbitMQConfig.EVENT_LINKED_QUEUE + ".dlq");
         assertThat(config.messageCreatedDlq().getName()).isEqualTo(RabbitMQConfig.MESSAGE_CREATED_QUEUE + ".dlq");
-        assertThat(config.matchRequestedDlq().getName()).isEqualTo(RabbitMQConfig.MATCH_REQUESTED_QUEUE + ".dlq");
+        assertThat(config.matchConfirmedDlq().getName()).isEqualTo(RabbitMQConfig.MATCH_CONFIRMED_QUEUE + ".dlq");
         assertThat(config.logroDesbloqueadoDlq().getName()).isEqualTo(RabbitMQConfig.LOGRO_DESBLOQUEADO_QUEUE + ".dlq");
     }
 
@@ -77,8 +77,17 @@ class RabbitMQConfigTest {
         assertThat(config.eventCreatedBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.EVENT_CREATED_ROUTING_KEY);
         assertThat(config.eventLinkedBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.EVENT_LINKED_ROUTING_KEY);
         assertThat(config.messageCreatedBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.MESSAGE_CREATED_ROUTING_KEY);
-        assertThat(config.matchRequestedBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.MATCH_REQUESTED_ROUTING_KEY);
+        assertThat(config.matchConfirmedBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.MATCH_CONFIRMED_ROUTING_KEY);
         assertThat(config.logroDesbloqueadoBinding().getRoutingKey()).isEqualTo(RabbitMQConfig.LOGRO_DESBLOQUEADO_ROUTING_KEY);
+    }
+
+    @Test
+    void matchConfirmedBinding_bindsQueueToMatchingExchange() {
+        Binding binding = config.matchConfirmedBinding();
+
+        assertThat(binding.getExchange()).isEqualTo(RabbitMQConfig.MATCHING_EXCHANGE);
+        assertThat(binding.getDestination()).isEqualTo(RabbitMQConfig.MATCH_CONFIRMED_QUEUE);
+        assertThat(binding.getRoutingKey()).isEqualTo(RabbitMQConfig.MATCH_CONFIRMED_ROUTING_KEY);
     }
 
     @Test
@@ -104,8 +113,20 @@ class RabbitMQConfigTest {
         assertThat(config.eventCreatedDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
         assertThat(config.eventLinkedDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
         assertThat(config.messageCreatedDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
-        assertThat(config.matchRequestedDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
+        assertThat(config.matchConfirmedDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
         assertThat(config.logroDesbloqueadoDlqBinding().getExchange()).isEqualTo(RabbitMQConfig.DLX_EXCHANGE);
+    }
+
+    @Test
+    void inboundContracts_matchProducersExactly() {
+        // Pins the literal wire values against what each owning service actually publishes,
+        // so a producer-side rename doesn't silently desync from this consumer.
+        assertThat(RabbitMQConfig.PARCHE_EXCHANGE).isEqualTo("parche.events");
+        assertThat(RabbitMQConfig.EVENT_EXCHANGE).isEqualTo("event.events");
+        assertThat(RabbitMQConfig.MATCHING_EXCHANGE).isEqualTo("patricia.matching");
+        assertThat(RabbitMQConfig.MATCH_CONFIRMED_ROUTING_KEY).isEqualTo("match.confirmado");
+        assertThat(RabbitMQConfig.LOGROS_EXCHANGE).isEqualTo("patricia.logros");
+        assertThat(RabbitMQConfig.LOGRO_DESBLOQUEADO_ROUTING_KEY).isEqualTo("logro.desbloqueado");
     }
 
     @Test

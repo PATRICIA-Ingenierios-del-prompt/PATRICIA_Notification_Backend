@@ -6,7 +6,7 @@ import ingprompt.patricia.notification.infrastructure.messaging.event.EventCreat
 import ingprompt.patricia.notification.infrastructure.messaging.event.EventLinkedToParcheEvent;
 import ingprompt.patricia.notification.infrastructure.messaging.event.EventoEnvelope;
 import ingprompt.patricia.notification.infrastructure.messaging.event.LogroDesbloqueadoPayload;
-import ingprompt.patricia.notification.infrastructure.messaging.event.MatchRequestedEvent;
+import ingprompt.patricia.notification.infrastructure.messaging.event.MatchConfirmadoPayload;
 import ingprompt.patricia.notification.infrastructure.messaging.event.MessageCreatedEvent;
 import ingprompt.patricia.notification.infrastructure.messaging.event.ParcheCreatedEvent;
 import org.junit.jupiter.api.Test;
@@ -85,13 +85,16 @@ class NotificationListenersTest {
     // ---- MatchingEventsListener (#5) ----
 
     @Test
-    void matchRequested_notifiesTargetUser() {
+    void matchConfirmado_notifiesBothUsers() {
         MatchingEventsListener listener = new MatchingEventsListener(receiveNotification);
-        UUID target = UUID.randomUUID();
+        UUID recipient = UUID.randomUUID();
+        MatchConfirmadoPayload payload = new MatchConfirmadoPayload(UUID.randomUUID(), UUID.randomUUID(), 0.87);
+        EventoEnvelope<MatchConfirmadoPayload> envelope =
+                new EventoEnvelope<>("evt", Instant.now(), recipient, "match.confirmado", payload);
 
-        listener.onMatchRequested(new MatchRequestedEvent("evt", UUID.randomUUID(), "Ana", target));
+        listener.onMatchConfirmado(envelope);
 
-        verify(receiveNotification).notifyUser(eq(target), eq(NotificationType.NEW_MATCH_REQUEST), any(), any(), eq("evt"));
+        verify(receiveNotification).notifyUser(eq(recipient), eq(NotificationType.NEW_MATCH_CONFIRMED), any(), any(), eq("evt"));
     }
 
     // ---- LogroEventsListener (#6) ----

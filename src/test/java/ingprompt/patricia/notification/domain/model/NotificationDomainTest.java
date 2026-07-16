@@ -17,7 +17,7 @@ class NotificationDomainTest {
 
     @Test
     void userNotification_create_startsUnread() {
-        UserNotification n = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_REQUEST,
+        UserNotification n = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_CONFIRMED,
                 "hi", Map.of("k", "v"), "evt", Duration.ofDays(90));
 
         assertThat(n.isUnread()).isTrue();
@@ -27,7 +27,7 @@ class NotificationDomainTest {
 
     @Test
     void userNotification_markRead_transitionsOnce() {
-        UserNotification n = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_REQUEST,
+        UserNotification n = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_CONFIRMED,
                 "hi", null, "evt", Duration.ofDays(90));
 
         assertThat(n.markRead()).isTrue();              // first transition
@@ -37,7 +37,7 @@ class NotificationDomainTest {
 
     @Test
     void userNotification_nullPayload_defaultsToEmptyMap() {
-        UserNotification n = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_REQUEST,
+        UserNotification n = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_CONFIRMED,
                 "hi", null, "evt", Duration.ofDays(90));
         assertThat(n.getPayload()).isEmpty();
     }
@@ -54,7 +54,7 @@ class NotificationDomainTest {
 
     @Test
     void notificationView_factories_mapScopeAndState() {
-        UserNotification u = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_REQUEST,
+        UserNotification u = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_CONFIRMED,
                 "hi", Map.of(), "evt", Duration.ofDays(90));
         GlobalNotification g = GlobalNotification.create(NotificationType.NEW_PUBLIC_PARCHE,
                 "g", Map.of(), "evt2", Duration.ofDays(90));
@@ -102,7 +102,7 @@ class NotificationDomainTest {
                 .isEqualTo("A new event has been created in Mountain Crew");
         assertThat(NotificationType.NEW_MESSAGE_ON_PARCHE.render("Mountain Crew"))
                 .isEqualTo("You have a new message on Mountain Crew");
-        assertThat(NotificationType.NEW_MATCH_REQUEST.render("Ana"))
-                .isEqualTo("The user Ana wants to connect with you");
+        assertThat(NotificationType.NEW_MATCH_CONFIRMED.render())
+                .isEqualTo("You have a new match!");
     }
 }

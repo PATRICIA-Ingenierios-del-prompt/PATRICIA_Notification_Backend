@@ -68,7 +68,7 @@ class NotificationServiceTest {
     void notifyUser_new_savesIncrementsAndPushesBothChannels() {
         when(userRepository.existsBySourceEventAndRecipient("evt-1", userId)).thenReturn(false);
 
-        service.notifyUser(userId, NotificationType.NEW_MATCH_REQUEST, "msg", Map.of("requesterId", "x"), "evt-1");
+        service.notifyUser(userId, NotificationType.NEW_MATCH_CONFIRMED, "msg", Map.of("requesterId", "x"), "evt-1");
 
         verify(userRepository).save(any(UserNotification.class));
         verify(unreadCounter).incrementIfPresent(userId);
@@ -80,7 +80,7 @@ class NotificationServiceTest {
     void notifyUser_duplicate_isSkipped() {
         when(userRepository.existsBySourceEventAndRecipient("evt-1", userId)).thenReturn(true);
 
-        service.notifyUser(userId, NotificationType.NEW_MATCH_REQUEST, "msg", Map.of(), "evt-1");
+        service.notifyUser(userId, NotificationType.NEW_MATCH_CONFIRMED, "msg", Map.of(), "evt-1");
 
         verify(userRepository, never()).save(any());
         verify(webPush, never()).pushToUser(any(), any());
@@ -143,7 +143,7 @@ class NotificationServiceTest {
     void getFeed_mergesTargetedAndGlobal_newestFirst_withGlobalUnread() {
         Instant now = Instant.now();
         UserNotification targeted = UserNotification.rehydrate(UUID.randomUUID(), userId,
-                NotificationType.NEW_MATCH_REQUEST, "t", Map.of(), NotificationState.UNREAD,
+                NotificationType.NEW_MATCH_CONFIRMED, "t", Map.of(), NotificationState.UNREAD,
                 now, "s1", now.plusSeconds(3600));
         GlobalNotification global = GlobalNotification.rehydrate(UUID.randomUUID(),
                 NotificationType.NEW_PUBLIC_PARCHE, "g", Map.of(), now.minusSeconds(60), "s2", now.plusSeconds(3600));
@@ -179,10 +179,10 @@ class NotificationServiceTest {
     void getFeed_truncatesToRequestedLimit_whenCombinedExceedsIt() {
         Instant now = Instant.now();
         UserNotification t1 = UserNotification.rehydrate(UUID.randomUUID(), userId,
-                NotificationType.NEW_MATCH_REQUEST, "t1", Map.of(), NotificationState.UNREAD,
+                NotificationType.NEW_MATCH_CONFIRMED, "t1", Map.of(), NotificationState.UNREAD,
                 now, "s1", now.plusSeconds(3600));
         UserNotification t2 = UserNotification.rehydrate(UUID.randomUUID(), userId,
-                NotificationType.NEW_MATCH_REQUEST, "t2", Map.of(), NotificationState.UNREAD,
+                NotificationType.NEW_MATCH_CONFIRMED, "t2", Map.of(), NotificationState.UNREAD,
                 now.minusSeconds(10), "s2", now.plusSeconds(3600));
         GlobalNotification g = GlobalNotification.rehydrate(UUID.randomUUID(),
                 NotificationType.NEW_PUBLIC_PARCHE, "g", Map.of(), now.minusSeconds(20), "s3", now.plusSeconds(3600));
@@ -226,7 +226,7 @@ class NotificationServiceTest {
     @Test
     void markRead_unread_flipsAndDecrements() {
         UUID id = UUID.randomUUID();
-        UserNotification unread = UserNotification.rehydrate(id, userId, NotificationType.NEW_MATCH_REQUEST,
+        UserNotification unread = UserNotification.rehydrate(id, userId, NotificationType.NEW_MATCH_CONFIRMED,
                 "m", Map.of(), NotificationState.UNREAD, Instant.now(), "s", Instant.now().plusSeconds(3600));
         when(userRepository.findByIdAndRecipient(id, userId)).thenReturn(Optional.of(unread));
 
@@ -250,7 +250,7 @@ class NotificationServiceTest {
     @Test
     void markRead_alreadyRead_doesNotDecrement() {
         UUID id = UUID.randomUUID();
-        UserNotification read = UserNotification.rehydrate(id, userId, NotificationType.NEW_MATCH_REQUEST,
+        UserNotification read = UserNotification.rehydrate(id, userId, NotificationType.NEW_MATCH_CONFIRMED,
                 "m", Map.of(), NotificationState.READ, Instant.now(), "s", Instant.now().plusSeconds(3600));
         when(userRepository.findByIdAndRecipient(id, userId)).thenReturn(Optional.of(read));
 

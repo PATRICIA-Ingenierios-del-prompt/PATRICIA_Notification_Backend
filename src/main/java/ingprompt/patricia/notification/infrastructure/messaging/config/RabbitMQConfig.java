@@ -23,15 +23,15 @@ public class RabbitMQConfig {
     public static final String PARCHE_EXCHANGE = "parche.events";          // Parches MS
     public static final String EVENT_EXCHANGE = "event.events";            // Events MS
     public static final String COMMUNICATION_EXCHANGE = "communication.events"; // Communication MS
-    public static final String MATCHING_EXCHANGE = "matching.events";      // Matching MS
+    public static final String MATCHING_EXCHANGE = "patricia.matching";    // Matching MS (see messaging.exchange in its application.yml)
     public static final String LOGROS_EXCHANGE = "patricia.logros";        // User Backend (album achievements)
 
     // ---------- Routing keys we listen to ----------
     public static final String PARCHE_CREATED_ROUTING_KEY = "parche.created";              // #1
     public static final String EVENT_CREATED_ROUTING_KEY = "event.created";                // #2
     public static final String EVENT_LINKED_ROUTING_KEY = "event.linked.to.parche";        // #3
-    public static final String MESSAGE_CREATED_ROUTING_KEY = "parche.message.created";      // #4
-    public static final String MATCH_REQUESTED_ROUTING_KEY = "match.requested";            // #5
+    public static final String MESSAGE_CREATED_ROUTING_KEY = "parche.message.created";      // #4 (no publisher yet, see README note)
+    public static final String MATCH_CONFIRMED_ROUTING_KEY = "match.confirmado";           // #5
     public static final String LOGRO_DESBLOQUEADO_ROUTING_KEY = "logro.desbloqueado";      // #6
 
     // ---------- Our queues ----------
@@ -39,7 +39,7 @@ public class RabbitMQConfig {
     public static final String EVENT_CREATED_QUEUE = "notifications.event.created.queue";
     public static final String EVENT_LINKED_QUEUE = "notifications.event.linked.queue";
     public static final String MESSAGE_CREATED_QUEUE = "notifications.message.created.queue";
-    public static final String MATCH_REQUESTED_QUEUE = "notifications.match.requested.queue";
+    public static final String MATCH_CONFIRMED_QUEUE = "notifications.match.confirmed.queue";
     public static final String LOGRO_DESBLOQUEADO_QUEUE = "notifications.logro.desbloqueado.queue";
 
     // ---------- Dead-letter infrastructure ----------
@@ -101,8 +101,8 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue matchRequestedQueue() {
-        return dlqEnabled(MATCH_REQUESTED_QUEUE);
+    public Queue matchConfirmedQueue() {
+        return dlqEnabled(MATCH_CONFIRMED_QUEUE);
     }
 
     @Bean
@@ -133,8 +133,8 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue matchRequestedDlq() {
-        return QueueBuilder.durable(MATCH_REQUESTED_QUEUE + DLQ_SUFFIX).build();
+    public Queue matchConfirmedDlq() {
+        return QueueBuilder.durable(MATCH_CONFIRMED_QUEUE + DLQ_SUFFIX).build();
     }
 
     @Bean
@@ -165,8 +165,8 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding matchRequestedBinding() {
-        return BindingBuilder.bind(matchRequestedQueue()).to(matchingExchange()).with(MATCH_REQUESTED_ROUTING_KEY);
+    public Binding matchConfirmedBinding() {
+        return BindingBuilder.bind(matchConfirmedQueue()).to(matchingExchange()).with(MATCH_CONFIRMED_ROUTING_KEY);
     }
 
     @Bean
@@ -197,8 +197,8 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding matchRequestedDlqBinding() {
-        return dlqBinding(MATCH_REQUESTED_QUEUE, matchRequestedDlq());
+    public Binding matchConfirmedDlqBinding() {
+        return dlqBinding(MATCH_CONFIRMED_QUEUE, matchConfirmedDlq());
     }
 
     @Bean

@@ -41,14 +41,14 @@ class UserNotificationRepositoryAdapterTest {
     private UserNotificationRepositoryAdapter adapter;
 
     private UserNotificationDocument document(UUID id, UUID recipientId) {
-        return new UserNotificationDocument(id, recipientId, NotificationType.NEW_MATCH_REQUEST, "m",
+        return new UserNotificationDocument(id, recipientId, NotificationType.NEW_MATCH_CONFIRMED, "m",
                 Map.of(), NotificationState.UNREAD, Instant.now(), "evt", Instant.now().plusSeconds(3600));
     }
 
     @Test
     void save_persistsMappedDocument() {
         adapter = new UserNotificationRepositoryAdapter(repository, mongoTemplate);
-        UserNotification notification = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_REQUEST,
+        UserNotification notification = UserNotification.create(UUID.randomUUID(), NotificationType.NEW_MATCH_CONFIRMED,
                 "hi", Map.of(), "evt", java.time.Duration.ofDays(90));
 
         adapter.save(notification);
