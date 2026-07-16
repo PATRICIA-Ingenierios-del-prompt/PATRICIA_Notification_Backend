@@ -22,14 +22,14 @@ class NotificationDocumentMapperTest {
         UUID recipientId = UUID.randomUUID();
         Instant now = Instant.now();
         Instant expires = now.plusSeconds(3600);
-        UserNotification original = UserNotification.rehydrate(id, recipientId, NotificationType.NEW_MATCH_REQUEST,
+        UserNotification original = UserNotification.rehydrate(id, recipientId, NotificationType.NEW_MATCH_CONFIRMED,
                 "hi", Map.of("k", "v"), NotificationState.UNREAD, now, "evt", expires);
 
         UserNotificationDocument document = NotificationDocumentMapper.toDocument(original);
 
         assertThat(document.getId()).isEqualTo(id);
         assertThat(document.getRecipientId()).isEqualTo(recipientId);
-        assertThat(document.getType()).isEqualTo(NotificationType.NEW_MATCH_REQUEST);
+        assertThat(document.getType()).isEqualTo(NotificationType.NEW_MATCH_CONFIRMED);
         assertThat(document.getMessage()).isEqualTo("hi");
         assertThat(document.getPayload()).containsEntry("k", "v");
         assertThat(document.getState()).isEqualTo(NotificationState.UNREAD);
@@ -41,7 +41,7 @@ class NotificationDocumentMapperTest {
 
         assertThat(roundTripped.getId()).isEqualTo(id);
         assertThat(roundTripped.getRecipientId()).isEqualTo(recipientId);
-        assertThat(roundTripped.getType()).isEqualTo(NotificationType.NEW_MATCH_REQUEST);
+        assertThat(roundTripped.getType()).isEqualTo(NotificationType.NEW_MATCH_CONFIRMED);
         assertThat(roundTripped.getMessage()).isEqualTo("hi");
         assertThat(roundTripped.getPayload()).containsEntry("k", "v");
         assertThat(roundTripped.getState()).isEqualTo(NotificationState.UNREAD);

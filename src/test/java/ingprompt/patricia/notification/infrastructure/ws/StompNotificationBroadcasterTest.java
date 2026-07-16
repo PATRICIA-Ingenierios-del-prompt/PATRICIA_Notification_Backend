@@ -29,7 +29,7 @@ class StompNotificationBroadcasterTest {
     private StompNotificationBroadcaster broadcaster;
 
     private NotificationView view() {
-        return new NotificationView(UUID.randomUUID(), NotificationScope.TARGETED, NotificationType.NEW_MATCH_REQUEST,
+        return new NotificationView(UUID.randomUUID(), NotificationScope.TARGETED, NotificationType.NEW_MATCH_CONFIRMED,
                 "hi", Map.of(), NotificationState.UNREAD, Instant.now());
     }
 

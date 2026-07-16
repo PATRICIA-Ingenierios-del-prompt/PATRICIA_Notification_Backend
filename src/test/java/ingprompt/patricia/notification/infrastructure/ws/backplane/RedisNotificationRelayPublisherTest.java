@@ -37,7 +37,7 @@ class RedisNotificationRelayPublisherTest {
     private RedisNotificationRelayPublisher publisher;
 
     private NotificationResponse payload() {
-        return new NotificationResponse(UUID.randomUUID(), NotificationScope.TARGETED, NotificationType.NEW_MATCH_REQUEST,
+        return new NotificationResponse(UUID.randomUUID(), NotificationScope.TARGETED, NotificationType.NEW_MATCH_CONFIRMED,
                 "hi", Map.of(), NotificationState.UNREAD, Instant.now());
     }
 
