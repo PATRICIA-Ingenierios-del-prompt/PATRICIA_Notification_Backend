@@ -36,7 +36,10 @@ config:
   # ambas conexiones necesitan TLS.
   redisSslEnabled: "true"
   backplaneRedisSslEnabled: "true"
-  backplaneRedisChannel: "notifications:broadcast"
+  # Debe coincidir con Ulink_Infra `terraform output -json
+  # backplane_channel_assignments` -> key "notification". Confirmado
+  # 2026-07-15: "patricia:backplane:notification" (NO "notifications:broadcast").
+  backplaneRedisChannel: "patricia:backplane:notification"
 
 # External Secrets Operator: remote keys in AWS Secrets Manager
 # (created by Ulink_Infra module.secrets; prefix = ${project_name}-${environment}).
