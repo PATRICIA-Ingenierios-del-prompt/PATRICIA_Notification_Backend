@@ -115,11 +115,18 @@ class NotificationListenersTest {
     // ---- MessageEventsListener (#4 — deferred stub) ----
 
     @Test
-    void messageCreated_isConsumedWithoutError() {
-        MessageEventsListener listener = new MessageEventsListener();
+    void messageCreated_notifiesRecipients() {
+        UUID sender = UUID.randomUUID();
+        UUID recipient = UUID.randomUUID();
+        UUID chatId = UUID.randomUUID();
+        Set<String> recipients = Set.of(recipient.toString());
+
+        MessageEventsListener listener = new MessageEventsListener(receiveNotification);
 
         listener.onMessageCreated(new MessageCreatedEvent(
-                "evt", UUID.randomUUID(), UUID.randomUUID(), "Crew", UUID.randomUUID(), Set.of(UUID.randomUUID())));
-        // No-op by design (offline push deferred); the test just guards it stays exception-free.
+                "evt", chatId, chatId, "Crew", sender, "juandc", "Hola!", "TEXT", recipients));
+
+        verify(receiveNotification).notifyUsers(eq(Set.of(recipient)),
+                eq(NotificationType.NEW_MESSAGE_ON_PARCHE), any(), any(), eq("evt"));
     }
 }

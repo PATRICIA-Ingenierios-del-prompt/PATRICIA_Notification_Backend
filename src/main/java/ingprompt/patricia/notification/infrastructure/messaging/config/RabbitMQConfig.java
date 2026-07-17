@@ -7,6 +7,8 @@ import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.support.converter.Jackson2JavaTypeMapper;
@@ -30,7 +32,7 @@ public class RabbitMQConfig {
     public static final String PARCHE_CREATED_ROUTING_KEY = "parche.created";              // #1
     public static final String EVENT_CREATED_ROUTING_KEY = "event.created";                // #2
     public static final String EVENT_LINKED_ROUTING_KEY = "event.linked.to.parche";        // #3
-    public static final String MESSAGE_CREATED_ROUTING_KEY = "parche.message.created";      // #4 (no publisher yet, see README note)
+    public static final String MESSAGE_CREATED_ROUTING_KEY = "chat.message.sent";      // #4 (published by PATRICIA_Comunicacion_Backend)
     public static final String MATCH_CONFIRMED_ROUTING_KEY = "match.confirmado";           // #5
     public static final String LOGRO_DESBLOQUEADO_ROUTING_KEY = "logro.desbloqueado";      // #6
 
@@ -210,7 +212,9 @@ public class RabbitMQConfig {
 
     @Bean
     public MessageConverter jsonMessageConverter() {
-        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(mapper);
         // INFERRED: deserialize into the consumer's local DTO, ignore the producer's __TypeId__.
         converter.setTypePrecedence(Jackson2JavaTypeMapper.TypePrecedence.INFERRED);
         return converter;
