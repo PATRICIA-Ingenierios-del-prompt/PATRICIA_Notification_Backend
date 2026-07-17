@@ -11,10 +11,13 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MessageCreatedEvent {
-    private String sourceEventId;
+    private String messageId;
     private UUID chatId;
     private UUID parcheId;
     private String parcheName;
     private UUID senderId;
-    private Set<UUID> recipientIds;   // chat members excluding the sender
+    private String senderUsername;
+    private String content;
+    private String messageType;
+    private Set<String> recipientIds;   // chat members excluding the sender
 }
