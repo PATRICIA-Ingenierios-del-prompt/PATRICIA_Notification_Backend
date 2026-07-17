@@ -129,4 +129,46 @@ class NotificationListenersTest {
         verify(receiveNotification).notifyUsers(eq(Set.of(recipient)),
                 eq(NotificationType.NEW_MESSAGE_ON_PARCHE), any(), any(), eq("evt"));
     }
+
+    @Test
+    void messageCreated_excludesSenderAndUsesDmFallback() {
+        UUID sender = UUID.randomUUID();
+        UUID chatId = UUID.randomUUID();
+        Set<String> recipients = Set.of(sender.toString());
+
+        MessageEventsListener listener = new MessageEventsListener(receiveNotification);
+
+        listener.onMessageCreated(new MessageCreatedEvent(
+                "evt", chatId, chatId, null, sender, "juandc", "Hola!", "TEXT", recipients));
+
+        verifyNoInteractions(receiveNotification);
+    }
+
+    @Test
+    void messageCreated_emptyRecipientsDoesNothing() {
+        UUID sender = UUID.randomUUID();
+        UUID chatId = UUID.randomUUID();
+
+        MessageEventsListener listener = new MessageEventsListener(receiveNotification);
+
+        listener.onMessageCreated(new MessageCreatedEvent(
+                "evt", chatId, chatId, "Crew", sender, "juandc", "Hola!", "TEXT", Set.of()));
+
+        verifyNoInteractions(receiveNotification);
+    }
+
+    @Test
+    void messageCreated_fileMessageUsesAttachmentPreview() {
+        UUID sender = UUID.randomUUID();
+        UUID recipient = UUID.randomUUID();
+        UUID chatId = UUID.randomUUID();
+
+        MessageEventsListener listener = new MessageEventsListener(receiveNotification);
+
+        listener.onMessageCreated(new MessageCreatedEvent(
+                "evt", chatId, chatId, "Crew", sender, "juandc", "doc.pdf", "FILE", Set.of(recipient.toString())));
+
+        verify(receiveNotification).notifyUsers(eq(Set.of(recipient)),
+                eq(NotificationType.NEW_MESSAGE_ON_PARCHE), eq("juandc en Crew: Archivo adjunto"), any(), eq("evt"));
+    }
 }
